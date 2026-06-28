@@ -67,13 +67,25 @@ jobs:
           WEBSITE_DOWNLOAD_VERSION: ${{ github.event.inputs.download_version }}
         run: npm run build:website
 
-      - name: Prepare SSH
+      - name: Check deploy secret
+        id: deploycheck
         if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+        env:
+          WEBSITE_SSH_KEY: ${{ secrets.WEBSITE_SSH_KEY }}
+        run: |
+          if [ -n "$WEBSITE_SSH_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::WEBSITE_SSH_KEY not configured — skipping website deploy (build and type-check still validated)."
+          fi
+
+      - name: Prepare SSH
+        if: steps.deploycheck.outputs.enabled == 'true'
         env:
           WEBSITE_SSH_KEY: ${{ secrets.WEBSITE_SSH_KEY }}
           WEBSITE_SSH_KNOWN_HOSTS: ${{ secrets.WEBSITE_SSH_KNOWN_HOSTS }}
         run: |
-          test -n "$WEBSITE_SSH_KEY"
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           printf '%s\n' "$WEBSITE_SSH_KEY" > ~/.ssh/website_deploy_key
@@ -83,7 +95,7 @@ jobs:
           fi
 
       - name: Deploy website
-        if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+        if: steps.deploycheck.outputs.enabled == 'true'
         env:
           WEBSITE_SSH_HOST: ${{ secrets.WEBSITE_SSH_HOST }}
           WEBSITE_SSH_USER: ${{ secrets.WEBSITE_SSH_USER }}
