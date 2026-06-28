@@ -226,11 +226,26 @@ function writeState(state: PersistedState): void {
   writeFileSync(file, JSON.stringify(state, null, 2))
 }
 
+// ponytail: single-flight guard for a live download. downloadOne streams the
+// model into a temp file and only renames it into modelPath at the very end, so
+// existsSync(modelPath) is false for the WHOLE download — and voicesDirReady()
+// goes true after the FIRST of ~54 voice files. Without this flag the disk
+// reconciliation below would flip a healthy in-progress download to 'missing'
+// (model not renamed yet) or 'ready' (one voice file landed), discarding the
+// progress we write and hiding the UI bar. The Download button is disabled while
+// downloading so one global flag is enough; it resets in a finally and is false
+// in a fresh process, so a genuine crash still reconciles to 'missing'.
+let downloadActive = false
+
 export function getLocalTtsStatus(): PersistedState {
   const state = readState()
   // 'installing' is a transient mid-flight state — trust the state file, the
   // download flow will rewrite it once pip finishes (or fails).
   if (state.model.status === 'installing') return state
+  // A genuinely-running download owns its state file (see downloadActive above) —
+  // don't reconcile it against a disk that won't reflect the model until the
+  // final atomic rename.
+  if (state.model.status === 'downloading' && downloadActive) return state
   const modelOk = existsSync(state.modelPath)
   const voicesOk = voicesDirReady(state.voicesPath)
   // Reconcile disk state: if a download finished but state file wasn't updated
@@ -668,7 +683,13 @@ async function provisionHermesVenv(): Promise<string | null> {
  *   4. If nothing works, surface a clear error pointing at uv, the manual
  *      setup script, and the HERMES_LOCAL_TTS_PYTHON override.
  */
-export async function ensureKokoroInstalled(python: string = resolvePython()): Promise<EnsureResult> {
+export async function ensureKokoroInstalled(
+  python: string = resolvePython(),
+  // ponytail: optional liveness hook. Install is the longest, percentage-less
+  // phase; reporting its sub-steps lets the UI show a changing message instead of
+  // a frozen "checking Python environment…" line.
+  onStatus?: (message: string) => void,
+): Promise<EnsureResult> {
   // ponytail: probe both kokoro and soundfile. We used to early-return on
   // kokoro importable alone, but soundfile is required by the engine's
   // WAV encoding and a partial install would surface as a synth-time
@@ -680,6 +701,7 @@ export async function ensureKokoroInstalled(python: string = resolvePython()): P
   const version = pythonVersion(python)
   if (isKokoroCompatible(version)) {
     try {
+      onStatus?.('installing kokoro + dependencies (this can take a few minutes)…')
       await installPackages(python, KOKORO_PACKAGES)
       // defensive: never trust the install exit code alone — re-probe BOTH
       // deps before reporting success. An install that exits 0 but leaves a
@@ -703,6 +725,7 @@ export async function ensureKokoroInstalled(python: string = resolvePython()): P
   }
 
   // Path 2: auto-provision hermes-managed venv via uv.
+  onStatus?.('setting up a Python 3.12 runtime for local TTS (this can take a few minutes)…')
   const venvPython = await provisionHermesVenv()
   if (venvPython) {
     return { installed: true, message: `kokoro installed in hermes venv (${formatVersion(pythonVersion(venvPython))})` }
@@ -741,43 +764,73 @@ export async function downloadLocalModel(onProgress?: ProgressHandler): Promise<
     }
   }
 
-  // ponytail: auto-install kokoro into the resolved Python before the user
-  // hits Test. Probe first so already-set-up environments are a no-op.
-  // Failures bubble up as state.error with the pip stderr tail.
-  writeState({ ...state, model: { status: 'installing', message: 'checking Python environment…' } })
+  downloadActive = true
   try {
-    await ensureKokoroInstalled()
-    writeState({ ...readState(), model: { status: 'installing', message: 'kokoro ready' } })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    writeState({ ...readState(), model: { status: 'error', message } })
-    throw err
-  }
+    // ponytail: auto-install kokoro into the resolved Python before the user
+    // hits Test. Probe first so already-set-up environments are a no-op.
+    // Failures bubble up as state.error with the pip stderr tail. The onStatus
+    // hook keeps the install message moving (see ensureKokoroInstalled).
+    writeState({ ...state, model: { status: 'installing', message: 'checking Python environment…' } })
+    try {
+      await ensureKokoroInstalled(undefined, (message) => {
+        const current = readState()
+        if (current.model.status === 'installing') {
+          writeState({ ...current, model: { status: 'installing', message } })
+        }
+      })
+      writeState({ ...readState(), model: { status: 'installing', message: 'kokoro ready' } })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      writeState({ ...readState(), model: { status: 'error', message } })
+      throw err
+    }
 
-  mkdirSync(modelDir(), { recursive: true })
-  writeState({ ...readState(), model: { status: 'downloading', receivedBytes: 0, totalBytes: null } })
+    mkdirSync(modelDir(), { recursive: true })
+    writeState({ ...readState(), model: { status: 'downloading', receivedBytes: 0, totalBytes: null } })
 
-  try {
-    const modelBytes = await downloadOne(KOKORO_MODEL_URL, state.modelPath, onProgress)
-    // ponytail: also fetch config.json so KModel can load it offline instead
-    // of hitting HuggingFace on every startup.
-    const configPath = join(modelDir(), 'config.json')
-    await downloadOne(KOKORO_CONFIG_URL, configPath)
-    const voicesBytes = await downloadVoiceFiles(state.voicesPath, onProgress)
-    const finalState = readState()
-    writeState({
-      ...finalState,
-      model: { status: 'ready', modelBytes, voicesBytes },
-    })
-    logger.info({ modelBytes, voicesBytes }, 'local-tts model downloaded')
-    return { modelBytes, voicesBytes }
-  } catch (err) {
-    const finalState = readState()
-    writeState({
-      ...finalState,
-      model: { status: 'error', message: err instanceof Error ? err.message : String(err) },
-    })
-    throw err
+    // ponytail: persist progress into the state file as the model streams in so
+    // GET /status (which the client polls every 1.5s) can render a real
+    // percentage. The .pth is ~90% of the bytes and the only file with a
+    // content-length worth a bar; config.json and the small voice files are a
+    // fast tail the bar rides out near 100%. Throttle to ~200ms — onProgress
+    // fires per chunk (thousands/sec) and each write is a synchronous
+    // writeFileSync, so per-chunk persistence would be wasteful churn.
+    let lastProgressWrite = 0
+    const persistProgress: ProgressHandler = (progress) => {
+      onProgress?.(progress)
+      const now = Date.now()
+      if (now - lastProgressWrite < 200) return
+      lastProgressWrite = now
+      const current = readState()
+      if (current.model.status === 'downloading') {
+        writeState({ ...current, model: { status: 'downloading', ...progress } })
+      }
+    }
+
+    try {
+      const modelBytes = await downloadOne(KOKORO_MODEL_URL, state.modelPath, persistProgress)
+      // ponytail: also fetch config.json so KModel can load it offline instead
+      // of hitting HuggingFace on every startup.
+      const configPath = join(modelDir(), 'config.json')
+      await downloadOne(KOKORO_CONFIG_URL, configPath)
+      const voicesBytes = await downloadVoiceFiles(state.voicesPath, onProgress)
+      const finalState = readState()
+      writeState({
+        ...finalState,
+        model: { status: 'ready', modelBytes, voicesBytes },
+      })
+      logger.info({ modelBytes, voicesBytes }, 'local-tts model downloaded')
+      return { modelBytes, voicesBytes }
+    } catch (err) {
+      const finalState = readState()
+      writeState({
+        ...finalState,
+        model: { status: 'error', message: err instanceof Error ? err.message : String(err) },
+      })
+      throw err
+    }
+  } finally {
+    downloadActive = false
   }
 }
 

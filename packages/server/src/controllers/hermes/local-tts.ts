@@ -32,9 +32,9 @@ export async function startDownload(ctx: Context) {
   if (!authUserId(ctx)) return
 
   try {
-    // Progress is best-effort: the engine-manager doesn't push events back to
-    // the controller, so callers poll GET /status to see download progress.
-    // For long downloads the UI uses SSE — see /download/stream.
+    // The engine-manager persists install/download progress into its state file
+    // as it works; the client polls GET /status to render it. This request only
+    // resolves once the whole download finishes (or fails).
     const result = await downloadLocalModel()
     ctx.body = { ok: true, ...result }
   } catch (err) {

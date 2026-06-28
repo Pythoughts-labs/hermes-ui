@@ -245,6 +245,59 @@ describe('local TTS engine-manager — kokoro auto-install', () => {
   })
 })
 
+// ── Download progress survives status reconciliation ─────────────────
+
+describe('local TTS engine-manager — download progress', () => {
+  it('getLocalTtsStatus reports live progress instead of reconciling to missing', async () => {
+    // kokoro + soundfile already importable → ensureKokoroInstalled early-returns
+    // with no install spawns.
+    spawnSyncMock.mockReturnValueOnce({ status: 0 } as any) // import kokoro
+    spawnSyncMock.mockReturnValueOnce({ status: 0 } as any) // import soundfile
+
+    const { downloadLocalModel, getLocalTtsStatus } = await loadManager()
+
+    // Fake the model stream: serve one 500-byte chunk (→ progress written), then
+    // capture what GET /status returns WHILE the download is still live (model
+    // file not yet renamed into place), then end the stream. The config fetch
+    // that follows rejects so the call unwinds — we only care about the snapshot
+    // taken mid-download.
+    let captured: ReturnType<typeof getLocalTtsStatus> | null = null
+    let served = false
+    const modelRes = {
+      ok: true,
+      headers: { get: (h: string) => (h === 'content-length' ? '1000' : null) },
+      body: {
+        getReader() {
+          return {
+            read: async () => {
+              if (!served) {
+                served = true
+                return { done: false, value: new Uint8Array(500) }
+              }
+              captured = getLocalTtsStatus()
+              return { done: true, value: undefined }
+            },
+            releaseLock() {},
+          }
+        },
+      },
+    }
+    ;(globalThis as any).fetch = vi.fn(async (url: unknown) => {
+      if (String(url).includes('kokoro-v1_0.pth')) return modelRes
+      throw new Error('stop after model file')
+    })
+
+    await expect(downloadLocalModel()).rejects.toThrow()
+
+    expect(captured).not.toBeNull()
+    expect(captured!.model.status).toBe('downloading')
+    expect(captured!.model).toMatchObject({ receivedBytes: 500, totalBytes: 1000 })
+
+    // Flag resets after the call: a later poll reconciles the dead download away.
+    expect(getLocalTtsStatus().model.status).not.toBe('downloading')
+  })
+})
+
 // ── resolvePython priority ───────────────────────────────────────────
 
 describe('local TTS engine-manager — resolvePython', () => {
