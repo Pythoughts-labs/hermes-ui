@@ -58,7 +58,11 @@ function withLinuxTargets(sourceArgs, targets) {
 const binary = process.platform === 'win32' ? 'electron-builder.cmd' : 'electron-builder'
 
 function runBuilder(sourceArgs) {
-  const result = spawnSync(binary, sourceArgs, { stdio: 'inherit' })
+  // On Windows the binary is a .cmd shim, which Node refuses to spawn without
+  // shell:true (CVE-2024-27980 hardening) and otherwise throws spawn EINVAL.
+  // Only the Windows path needs the shell; Linux/deb args (which include a
+  // value with a space) stay on shell:false to avoid shell word-splitting.
+  const result = spawnSync(binary, sourceArgs, { stdio: 'inherit', shell: process.platform === 'win32' })
   if (result.error) {
     console.error(result.error.message)
     process.exit(1)
