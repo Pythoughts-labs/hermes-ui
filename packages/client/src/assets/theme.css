@@ -86,6 +86,14 @@
   --background-tsp-menu-white: rgba(17, 24, 39, 0.04);
   --background-tsp-card-gray: rgba(17, 24, 39, 0.03);
   --background-nav: #e6e6e6;
+  /* Chat-surface elevation ramp. The dark block defines the full ramp; light
+     only needs the variables actually consumed (sidebar, chat, input) — a light
+     ramp can't keep getting lighter than white, so it isn't a mirror of dark's
+     order. Without these the sidebar/chat/voice-overlay backgrounds resolve to
+     `transparent` in the default light theme and bleed through. */
+  --bg-sidebar: #e6e6e6;
+  --bg-chat: #ffffff;
+  --bg-input: #f0f0f0;
   --background-card: var(--bolt-elements-bg-depth-1);
   --background-mask: rgba(0, 0, 0, 0.6);
   --border-main: var(--bolt-elements-borderColor);
