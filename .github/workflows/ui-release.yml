@@ -1,0 +1,111 @@
+name: Publish Hermes UI Artifact to Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attach the Hermes UI artifact to"
+        required: false
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ui-release-${{ github.event.release.tag_name || github.event.inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ui:
+    name: UI
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.event.inputs.tag || github.ref_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild node-pty
+
+      - name: Build UI
+        run: npm run build
+
+      - name: Keep production dependencies only
+        run: npm prune --omit=dev --no-audit --no-fund
+
+      - name: Package UI
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          asset="hermes-ui-${version}.tar.gz"
+          manifest="hermes-ui-${version}.json"
+          mkdir -p release/ui /tmp/hermes-ui-package/ui
+
+          cp package.json package-lock.json /tmp/hermes-ui-package/ui/
+          cp -R bin dist node_modules /tmp/hermes-ui-package/ui/
+
+          tar -czf "release/ui/${asset}" -C /tmp/hermes-ui-package ui
+          sha256="$(shasum -a 256 "release/ui/${asset}" | awk '{print $1}')"
+          size="$(stat -c%s "release/ui/${asset}")"
+          printf '%s  %s\n' "$sha256" "$asset" > "release/ui/${asset}.sha256"
+
+          node - <<'NODE' "$version" "$asset" "$sha256" "$size" "release/ui/${manifest}"
+          const { writeFileSync } = require('node:fs')
+          const [version, asset, sha256, size, manifest] = process.argv.slice(2)
+          writeFileSync(manifest, JSON.stringify({
+            schema: 1,
+            uiVersion: version,
+            createdAt: new Date().toISOString(),
+            asset: {
+              name: asset,
+              sha256,
+              size: Number(size),
+            },
+          }, null, 2) + '\n')
+          NODE
+
+          echo "asset=${asset}" >> "$GITHUB_OUTPUT"
+          echo "manifest=${manifest}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload UI artifact to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name || github.event.inputs.tag || github.ref_name }}
+          make_latest: false
+          fail_on_unmatched_files: true
+          files: |
+            release/ui/${{ steps.package.outputs.asset }}
+            release/ui/${{ steps.package.outputs.asset }}.sha256
+            release/ui/${{ steps.package.outputs.manifest }}
+
+  keep-release-out-of-latest:
+    name: Keep release out of GitHub latest
+    if: always() && github.event_name == 'release'
+    needs: ui
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Mark release as not latest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --latest=false

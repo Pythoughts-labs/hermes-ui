@@ -1,0 +1,188 @@
+<svg width="1280" height="320" viewBox="0 0 1280 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hermes UI — self-hosted agent console by elkaix, Pythoughts-labs">
+  <title>Hermes UI — Pythoughts-labs · self-hosted agent console</title>
+
+  <defs>
+    <!-- Brass gradient (used for the caduceus, the italic "UI", and the topology edges) -->
+    <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#D4B27A"/>
+      <stop offset="0.5"  stop-color="#C7A56A"/>
+      <stop offset="1"    stop-color="#8C7344"/>
+    </linearGradient>
+
+    <!-- Faint 40px grid + 24px dot grid for engineered texture -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#F0EDE5" stroke-opacity="0.025" stroke-width="1"/>
+    </pattern>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="0.6" fill="#F0EDE5" fill-opacity="0.07"/>
+    </pattern>
+
+    <!-- Glow for the active signal at the topology hub -->
+    <radialGradient id="signal-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#2DD4BF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/>
+    </radialGradient>
+
+    <!--
+      Internal CSS — runs when the SVG is loaded as an image (e.g. GitHub README
+      via <img>). GSAP cannot run in that context; the snippet at the bottom of
+      this file shows how to animate the same SVG on the live website hero.
+    -->
+    <style>
+      svg { text-rendering: geometricPrecision; }
+
+      .display { font-family: 'Söhne', 'Avenir Next', 'Avenir', 'Optima', 'Helvetica Neue', sans-serif; }
+      .mono    { font-family: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, Monaco, Consolas, 'Courier New', monospace; }
+
+      /* Caduceus: engraved brass lines, no fills on the strokes */
+      .caduceus line, .caduceus path { stroke: url(#brass); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* Topology edges */
+      .edge     { stroke: #C7A56A; stroke-width: 1.4; fill: none; stroke-opacity: 0.32; }
+      .edge-hub { stroke: #C7A56A; stroke-width: 1.6; fill: none; }
+
+      /* The hub node is the "live" center; signal pulses, hub edges shimmer */
+      @keyframes signal-pulse {
+        0%, 100% { opacity: 0.35; }
+        50%      { opacity: 1;    }
+      }
+      .signal-pulse { animation: signal-pulse 2.6s ease-in-out infinite; }
+
+      @keyframes flow {
+        0%, 100% { stroke-opacity: 0.25; }
+        50%      { stroke-opacity: 0.75; }
+      }
+      .flow-1 { animation: flow 3.2s ease-in-out infinite; }
+      .flow-2 { animation: flow 3.2s ease-in-out infinite; animation-delay: 0.4s; }
+      .flow-3 { animation: flow 3.2s ease-in-out infinite; animation-delay: 0.8s; }
+      .flow-4 { animation: flow 3.2s ease-in-out infinite; animation-delay: 1.2s; }
+
+      /* Honor user motion preference */
+      @media (prefers-reduced-motion: reduce) {
+        .signal-pulse, .flow-1, .flow-2, .flow-3, .flow-4 { animation: none; }
+      }
+    </style>
+  </defs>
+
+  <!-- ── Canvas ─────────────────────────────────────────────────────────── -->
+  <rect width="1280" height="320" rx="24" fill="#0B1115"/>
+  <rect width="1280" height="320" rx="24" fill="url(#grid)"/>
+  <rect width="1280" height="320" rx="24" fill="url(#dots)"/>
+  <rect x="0.5" y="0.5" width="1279" height="319" rx="23.5" fill="none" stroke="#F0EDE5" stroke-opacity="0.07"/>
+
+  <!-- ── Top strip: tracked org label + hairline rule ──────────────────── -->
+  <g class="display">
+    <text x="70" y="48" fill="#B8B3A8" font-size="12" font-weight="600" letter-spacing="4.2">PYTHOUGHTS</text>
+    <text x="208" y="48" fill="#6B6862" font-size="12" font-weight="500" letter-spacing="2">·</text>
+    <text x="222" y="48" fill="#B8B3A8" font-size="12" font-weight="600" letter-spacing="4.2">LABS</text>
+    <text x="278" y="48" fill="#6B6862" font-size="11" font-weight="500" letter-spacing="2.2">OPEN&#160;SOURCE</text>
+    <line x1="395" y1="44" x2="1210" y2="44" stroke="#F0EDE5" stroke-opacity="0.08" stroke-width="1"/>
+  </g>
+
+  <!-- ── Caduceus mark, centered around x=140 ──────────────────────────── -->
+  <g class="caduceus">
+    <!-- Knob -->
+    <circle cx="140" cy="108" r="6.5" fill="url(#brass)"/>
+    <!-- Staff -->
+    <line x1="140" y1="115" x2="140" y2="234" stroke-width="3.4"/>
+    <!-- Wings — three curved feathers each side, swept upward and outward -->
+    <path d="M 138 124 Q 118 100  92 104" stroke-width="2.4"/>
+    <path d="M 138 131 Q 112 116  88 124" stroke-width="2.4"/>
+    <path d="M 138 138 Q 112 138  90 144" stroke-width="2.4"/>
+    <path d="M 142 124 Q 162 100 188 104" stroke-width="2.4"/>
+    <path d="M 142 131 Q 168 116 192 124" stroke-width="2.4"/>
+    <path d="M 142 138 Q 168 138 190 144" stroke-width="2.4"/>
+    <!-- Snake hints — alternating curves suggest intertwined serpents -->
+    <path d="M140 158 C 130 164, 130 174, 140 180" stroke-width="1.8" stroke-opacity="0.75"/>
+    <path d="M140 188 C 150 194, 150 204, 140 210" stroke-width="1.8" stroke-opacity="0.75"/>
+    <!-- Base seal -->
+    <line x1="132" y1="240" x2="148" y2="240" stroke-width="2.6"/>
+  </g>
+
+  <!-- ── Wordmark: "Hermes" extra-bold paper + "UI" italic brass ───────── -->
+  <g class="display">
+    <text x="240" y="200" font-size="92" font-weight="800" letter-spacing="-2.5" fill="#F0EDE5">
+      Hermes<tspan fill="url(#brass)" font-weight="400" font-style="italic" letter-spacing="-1" dx="22">UI</tspan>
+    </text>
+    <text x="244" y="232" font-size="17" font-weight="400" letter-spacing="0.4" fill="#9C9890" font-style="italic">self-hosted agent console</text>
+    <text x="244" y="258" font-size="14" font-weight="500" letter-spacing="0.4" fill="#6B6862">
+      by <tspan fill="#F0EDE5" font-weight="600">elkaix</tspan>
+    </text>
+  </g>
+
+  <!-- ── Blueprint topology on the right: hub + 4 connected capabilities ── -->
+  <g>
+    <!-- Outer mesh (faint) -->
+    <line class="edge" x1="1060" y1="100" x2="1140" y2="175"/>
+    <line class="edge" x1="1140" y1="175" x2="1060" y2="250"/>
+    <line class="edge" x1="1060" y1="250" x2="980"  y2="175"/>
+    <line class="edge" x1="980"  y1="175" x2="1060" y2="100"/>
+
+    <!-- Hub edges (animated data-flow) -->
+    <line class="edge-hub flow-1" x1="1060" y1="100" x2="1060" y2="175"/>
+    <line class="edge-hub flow-2" x1="1140" y1="175" x2="1060" y2="175"/>
+    <line class="edge-hub flow-3" x1="1060" y1="250" x2="1060" y2="175"/>
+    <line class="edge-hub flow-4" x1="980"  y1="175" x2="1060" y2="175"/>
+
+    <!-- Outer nodes -->
+    <circle cx="1060" cy="100" r="7" fill="#0B1115" stroke="#C7A56A" stroke-width="1.6"/>
+    <circle cx="1140" cy="175" r="7" fill="#0B1115" stroke="#C7A56A" stroke-width="1.6"/>
+    <circle cx="1060" cy="250" r="7" fill="#0B1115" stroke="#C7A56A" stroke-width="1.6"/>
+    <circle cx="980"  cy="175" r="7" fill="#0B1115" stroke="#C7A56A" stroke-width="1.6"/>
+
+    <!-- Hub node (larger, the live agent runtime) -->
+    <circle cx="1060" cy="175" r="13" fill="#0B1115" stroke="#C7A56A" stroke-width="2"/>
+    <circle cx="1060" cy="175" r="16" fill="url(#signal-glow)" class="signal-pulse"/>
+    <circle cx="1060" cy="175" r="5"  fill="#2DD4BF"/>
+
+    <!-- Node labels (positioned clear of the circles) -->
+    <g class="mono" fill="#6B6862" font-size="9" letter-spacing="1.6">
+      <text x="1060" y="84"  text-anchor="middle">MODELS</text>
+      <text x="1156" y="178" text-anchor="start">CHANNELS</text>
+      <text x="1060" y="276" text-anchor="middle">MEMORY</text>
+      <text x="964"  y="178" text-anchor="end">TOOLS</text>
+    </g>
+  </g>
+
+  <!-- ── Bottom monospace metadata strip ────────────────────────────────── -->
+  <g>
+    <line x1="70" y1="276" x2="1210" y2="276" stroke="#F0EDE5" stroke-opacity="0.07" stroke-width="1"/>
+    <g class="mono" font-size="12" letter-spacing="0.6">
+      <text x="70"   y="298" fill="#F0EDE5" font-weight="500">v0.1.0</text>
+      <text x="158"  y="298" fill="#6B6862">·</text>
+      <text x="178"  y="298" fill="#B8B3A8">MIT</text>
+      <text x="232"  y="298" fill="#6B6862">·</text>
+      <text x="252"  y="298" fill="#B8B3A8">node ≥23</text>
+      <text x="354"  y="298" fill="#6B6862">·</text>
+      <text x="374"  y="298" fill="#B8B3A8">self-hosted</text>
+      <text x="488"  y="298" fill="#6B6862">·</text>
+      <text x="508"  y="298" fill="#B8B3A8">macOS · windows · linux</text>
+      <text x="1210" y="298" fill="#F0EDE5" font-weight="500" text-anchor="end">github.com/pythoughts-labs/hermes-ui</text>
+    </g>
+  </g>
+
+  <!--
+    ╭───────────────────────────────────────────────────────────────────╮
+    │ GSAP hook (for the live website hero, NOT the README):            │
+    │                                                                   │
+    │   import { gsap } from "gsap";                                    │
+    │   import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";            │
+    │   gsap.registerPlugin(DrawSVGPlugin);                             │
+    │                                                                   │
+    │   const tl = gsap.timeline({ defaults: { ease: "power3.out" } }); │
+    │   tl.from(".caduceus line, .caduceus path, .caduceus circle",    │
+    │        { drawSVG: 0, duration: 0.7, stagger: 0.04 })              │
+    │     .from(".display text",                                        │
+    │        { y: 16, opacity: 0, duration: 0.5, stagger: 0.06 },      │
+    │        "<0.2")                                                    │
+    │     .from(".edge, .edge-hub",                                     │
+    │        { drawSVG: 0, duration: 0.9, stagger: 0.06 }, "<0.1")     │
+    │     .from(".signal-pulse",                                        │
+    │        { scale: 0, transformOrigin: "50% 50%",                    │
+    │          duration: 0.4, ease: "back.out(2)" }, "<0.2");          │
+    │                                                                   │
+    │ GitHub README strips <script>; CSS animations in <style>          │
+    │ still run when the SVG is loaded via <img src="banner.svg">.      │
+    ╰───────────────────────────────────────────────────────────────────╯
+  -->
+</svg>

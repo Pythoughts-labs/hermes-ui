@@ -1,0 +1,342 @@
+import { app } from 'electron'
+
+type DesktopLocale = 'en' | 'ja' | 'ko' | 'fr' | 'es' | 'de' | 'pt'
+
+type TranslationKey =
+  | 'tray.show'
+  | 'tray.hide'
+  | 'tray.checkForUpdates'
+  | 'tray.openAtLogin'
+  | 'tray.quit'
+  | 'update.upToDateTitle'
+  | 'update.upToDateMessage'
+  | 'update.checkingTitle'
+  | 'update.checkingMessage'
+  | 'update.currentVersion'
+  | 'update.availableTitle'
+  | 'update.availableMessage'
+  | 'update.downloading'
+  | 'update.readyTitle'
+  | 'update.readyMessage'
+  | 'update.readyDetail'
+  | 'update.restartNow'
+  | 'update.download'
+  | 'update.later'
+  | 'update.failedTitle'
+  | 'update.failedMessage'
+  | 'update.noUpdateInfoMessage'
+  | 'update.packagedOnlyMessage'
+  | 'desktop.startingLocalServices'
+  | 'desktop.selectRuntimeSource'
+  | 'desktop.downloadFailed'
+  | 'desktop.downloadGithubTitle'
+  | 'desktop.downloadGithubDetail'
+  | 'desktop.failedPrepareRuntime'
+  | 'desktop.failedStartServices'
+  | 'desktop.shuttingDown'
+  | 'runtime.checking'
+  | 'runtime.downloading'
+  | 'runtime.downloadingPackage'
+  | 'runtime.verifying'
+  | 'runtime.extracting'
+  | 'runtime.ready'
+  | 'common.ok'
+
+const supportedLocales: DesktopLocale[] = ['en', 'ja', 'ko', 'fr', 'es', 'de', 'pt']
+
+const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
+  en: {
+    'tray.show': 'Show Hermes UI',
+    'tray.hide': 'Hide Hermes UI',
+    'tray.checkForUpdates': 'Check for Updates',
+    'tray.openAtLogin': 'Open at Login',
+    'tray.quit': 'Quit Hermes UI',
+    'update.upToDateTitle': 'Hermes UI',
+    'update.upToDateMessage': 'Hermes UI is up to date.',
+    'update.checkingTitle': 'Hermes UI',
+    'update.checkingMessage': 'Checking for updates...',
+    'update.currentVersion': 'Current version: {version}',
+    'update.availableTitle': 'Update available',
+    'update.availableMessage': 'Hermes UI {version} is available.',
+    'update.downloading': 'The update is downloading in the background.',
+    'update.readyTitle': 'Update ready',
+    'update.readyMessage': 'Hermes UI {version} is ready to install.',
+    'update.readyDetail': 'Restart now to apply the update, or it will be installed on next quit.',
+    'update.restartNow': 'Restart now',
+    'update.download': 'Download',
+    'update.later': 'Later',
+    'update.failedTitle': 'Update check failed',
+    'update.failedMessage': 'Could not check for Hermes UI updates.',
+    'update.noUpdateInfoMessage': 'Update information is not available for this platform yet.',
+    'update.packagedOnlyMessage': 'Automatic updates are only available in the packaged desktop app.',
+    'desktop.startingLocalServices': 'Starting local services...',
+    'desktop.selectRuntimeSource': 'Select a runtime download source to start local services.',
+    'desktop.downloadFailed': 'Download failed',
+    'desktop.downloadGithubTitle': 'Download from GitHub',
+    'desktop.downloadGithubDetail': 'Use the release asset directly from GitHub.',
+    'desktop.failedPrepareRuntime': 'Failed to prepare Hermes runtime',
+    'desktop.failedStartServices': 'Failed to start local services',
+    'desktop.shuttingDown': 'Closing local services...',
+    'runtime.checking': 'Checking Hermes runtime...',
+    'runtime.downloading': 'Downloading Hermes runtime...',
+    'runtime.downloadingPackage': 'Downloading {name}...',
+    'runtime.verifying': 'Verifying Hermes runtime...',
+    'runtime.extracting': 'Extracting Hermes runtime...',
+    'runtime.ready': 'Hermes runtime ready.',
+    'common.ok': 'OK',
+  },
+  ja: {
+    'tray.show': 'Hermes UI を表示',
+    'tray.hide': 'Hermes UI を隠す',
+    'tray.checkForUpdates': 'アップデートを確認',
+    'tray.openAtLogin': 'ログイン時に開く',
+    'tray.quit': 'Hermes UI を終了',
+    'update.upToDateTitle': 'Hermes UI',
+    'update.upToDateMessage': 'Hermes UI は最新です。',
+    'update.checkingTitle': 'Hermes UI',
+    'update.checkingMessage': 'アップデートを確認しています...',
+    'update.currentVersion': '現在のバージョン: {version}',
+    'update.availableTitle': 'アップデートがあります',
+    'update.availableMessage': 'Hermes UI {version} が利用できます。',
+    'update.downloading': 'アップデートをバックグラウンドでダウンロードしています。',
+    'update.readyTitle': 'アップデートの準備ができました',
+    'update.readyMessage': 'Hermes UI {version} をインストールできます。',
+    'update.readyDetail': '今すぐ再起動して適用するか、次回終了時にインストールされます。',
+    'update.restartNow': '今すぐ再起動',
+    'update.download': 'ダウンロード',
+    'update.later': '後で',
+    'update.failedTitle': 'アップデート確認に失敗しました',
+    'update.failedMessage': 'Hermes UI のアップデートを確認できませんでした。',
+    'update.noUpdateInfoMessage': 'このプラットフォームのアップデート情報はまだ利用できません。',
+    'update.packagedOnlyMessage': '自動アップデートはパッケージ版デスクトップアプリでのみ利用できます。',
+    'desktop.startingLocalServices': 'ローカルサービスを起動しています...',
+    'desktop.selectRuntimeSource': 'ローカルサービスを開始するためのランタイムダウンロード元を選択してください。',
+    'desktop.downloadFailed': 'ダウンロードに失敗しました',
+    'desktop.downloadGithubTitle': 'GitHub からダウンロード',
+    'desktop.downloadGithubDetail': 'GitHub のリリースアセットを直接使用します。',
+    'desktop.failedPrepareRuntime': 'Hermes ランタイムの準備に失敗しました',
+    'desktop.failedStartServices': 'ローカルサービスの起動に失敗しました',
+    'desktop.shuttingDown': 'ローカルサービスを終了しています...',
+    'runtime.checking': 'Hermes ランタイムを確認しています...',
+    'runtime.downloading': 'Hermes ランタイムをダウンロードしています...',
+    'runtime.downloadingPackage': '{name} をダウンロードしています...',
+    'runtime.verifying': 'Hermes ランタイムを検証しています...',
+    'runtime.extracting': 'Hermes ランタイムを展開しています...',
+    'runtime.ready': 'Hermes ランタイムの準備ができました。',
+    'common.ok': 'OK',
+  },
+  ko: {
+    'tray.show': 'Hermes UI 표시',
+    'tray.hide': 'Hermes UI 숨기기',
+    'tray.checkForUpdates': '업데이트 확인',
+    'tray.openAtLogin': '로그인 시 열기',
+    'tray.quit': 'Hermes UI 종료',
+    'update.upToDateTitle': 'Hermes UI',
+    'update.upToDateMessage': 'Hermes UI가 최신 버전입니다.',
+    'update.checkingTitle': 'Hermes UI',
+    'update.checkingMessage': '업데이트를 확인하는 중...',
+    'update.currentVersion': '현재 버전: {version}',
+    'update.availableTitle': '업데이트 사용 가능',
+    'update.availableMessage': 'Hermes UI {version}을 사용할 수 있습니다.',
+    'update.downloading': '업데이트를 백그라운드에서 다운로드하고 있습니다.',
+    'update.readyTitle': '업데이트 준비 완료',
+    'update.readyMessage': 'Hermes UI {version}을 설치할 준비가 되었습니다.',
+    'update.readyDetail': '지금 다시 시작해 업데이트를 적용하거나 다음 종료 시 설치합니다.',
+    'update.restartNow': '지금 다시 시작',
+    'update.download': '다운로드',
+    'update.later': '나중에',
+    'update.failedTitle': '업데이트 확인 실패',
+    'update.failedMessage': 'Hermes UI 업데이트를 확인할 수 없습니다.',
+    'update.noUpdateInfoMessage': '이 플랫폼의 업데이트 정보를 아직 사용할 수 없습니다.',
+    'update.packagedOnlyMessage': '자동 업데이트는 패키징된 데스크톱 앱에서만 사용할 수 있습니다.',
+    'desktop.startingLocalServices': '로컬 서비스를 시작하는 중...',
+    'desktop.selectRuntimeSource': '로컬 서비스를 시작할 런타임 다운로드 소스를 선택하세요.',
+    'desktop.downloadFailed': '다운로드 실패',
+    'desktop.downloadGithubTitle': 'GitHub에서 다운로드',
+    'desktop.downloadGithubDetail': 'GitHub 릴리스 자산을 직접 사용합니다.',
+    'desktop.failedPrepareRuntime': 'Hermes 런타임 준비 실패',
+    'desktop.failedStartServices': '로컬 서비스 시작 실패',
+    'desktop.shuttingDown': '로컬 서비스를 종료하는 중...',
+    'runtime.checking': 'Hermes 런타임을 확인하는 중...',
+    'runtime.downloading': 'Hermes 런타임을 다운로드하는 중...',
+    'runtime.downloadingPackage': '{name} 다운로드 중...',
+    'runtime.verifying': 'Hermes 런타임을 검증하는 중...',
+    'runtime.extracting': 'Hermes 런타임을 압축 해제하는 중...',
+    'runtime.ready': 'Hermes 런타임이 준비되었습니다.',
+    'common.ok': '확인',
+  },
+  fr: {
+    'tray.show': 'Afficher Hermes UI',
+    'tray.hide': 'Masquer Hermes UI',
+    'tray.checkForUpdates': 'Rechercher les mises a jour',
+    'tray.openAtLogin': 'Ouvrir a la connexion',
+    'tray.quit': 'Quitter Hermes UI',
+    'update.upToDateTitle': 'Hermes UI',
+    'update.upToDateMessage': 'Hermes UI est a jour.',
+    'update.checkingTitle': 'Hermes UI',
+    'update.checkingMessage': 'Recherche de mises a jour...',
+    'update.currentVersion': 'Version actuelle : {version}',
+    'update.availableTitle': 'Mise a jour disponible',
+    'update.availableMessage': 'Hermes UI {version} est disponible.',
+    'update.downloading': 'La mise a jour se telecharge en arriere-plan.',
+    'update.readyTitle': 'Mise a jour prete',
+    'update.readyMessage': 'Hermes UI {version} est pret a etre installe.',
+    'update.readyDetail': 'Redemarrez maintenant pour appliquer la mise a jour, ou elle sera installee a la prochaine fermeture.',
+    'update.restartNow': 'Redemarrer maintenant',
+    'update.download': 'Telecharger',
+    'update.later': 'Plus tard',
+    'update.failedTitle': 'Echec de la recherche de mise a jour',
+    'update.failedMessage': 'Impossible de rechercher les mises a jour de Hermes UI.',
+    'update.noUpdateInfoMessage': 'Les informations de mise a jour ne sont pas encore disponibles pour cette plateforme.',
+    'update.packagedOnlyMessage': 'Les mises a jour automatiques ne sont disponibles que dans l application de bureau packagee.',
+    'desktop.startingLocalServices': 'Demarrage des services locaux...',
+    'desktop.selectRuntimeSource': 'Selectionnez une source de telechargement du runtime pour demarrer les services locaux.',
+    'desktop.downloadFailed': 'Echec du telechargement',
+    'desktop.downloadGithubTitle': 'Telecharger depuis GitHub',
+    'desktop.downloadGithubDetail': 'Utilise directement l asset de release GitHub.',
+    'desktop.failedPrepareRuntime': 'Echec de la preparation du runtime Hermes',
+    'desktop.failedStartServices': 'Echec du demarrage des services locaux',
+    'desktop.shuttingDown': 'Fermeture des services locaux...',
+    'runtime.checking': 'Verification du runtime Hermes...',
+    'runtime.downloading': 'Telechargement du runtime Hermes...',
+    'runtime.downloadingPackage': 'Telechargement de {name}...',
+    'runtime.verifying': 'Verification du runtime Hermes...',
+    'runtime.extracting': 'Extraction du runtime Hermes...',
+    'runtime.ready': 'Runtime Hermes pret.',
+    'common.ok': 'OK',
+  },
+  es: {
+    'tray.show': 'Mostrar Hermes UI',
+    'tray.hide': 'Ocultar Hermes UI',
+    'tray.checkForUpdates': 'Buscar actualizaciones',
+    'tray.openAtLogin': 'Abrir al iniciar sesion',
+    'tray.quit': 'Salir de Hermes UI',
+    'update.upToDateTitle': 'Hermes UI',
+    'update.upToDateMessage': 'Hermes UI esta actualizado.',
+    'update.checkingTitle': 'Hermes UI',
+    'update.checkingMessage': 'Buscando actualizaciones...',
+    'update.currentVersion': 'Version actual: {version}',
+    'update.availableTitle': 'Actualizacion disponible',
+    'update.availableMessage': 'Hermes UI {version} esta disponible.',
+    'update.downloading': 'La actualizacion se esta descargando en segundo plano.',
+    'update.readyTitle': 'Actualizacion lista',
+    'update.readyMessage': 'Hermes UI {version} esta listo para instalarse.',
+    'update.readyDetail': 'Reinicia ahora para aplicar la actualizacion, o se instalara al salir.',
+    'update.restartNow': 'Reiniciar ahora',
+    'update.download': 'Descargar',
+    'update.later': 'Mas tarde',
+    'update.failedTitle': 'Error al buscar actualizaciones',
+    'update.failedMessage': 'No se pudieron buscar actualizaciones de Hermes UI.',
+    'update.noUpdateInfoMessage': 'La informacion de actualizacion aun no esta disponible para esta plataforma.',
+    'update.packagedOnlyMessage': 'Las actualizaciones automaticas solo estan disponibles en la app de escritorio empaquetada.',
+    'desktop.startingLocalServices': 'Iniciando servicios locales...',
+    'desktop.selectRuntimeSource': 'Selecciona una fuente de descarga del runtime para iniciar los servicios locales.',
+    'desktop.downloadFailed': 'Error de descarga',
+    'desktop.downloadGithubTitle': 'Descargar desde GitHub',
+    'desktop.downloadGithubDetail': 'Usa directamente el recurso de release de GitHub.',
+    'desktop.failedPrepareRuntime': 'No se pudo preparar el runtime de Hermes',
+    'desktop.failedStartServices': 'No se pudieron iniciar los servicios locales',
+    'desktop.shuttingDown': 'Cerrando servicios locales...',
+    'runtime.checking': 'Comprobando runtime de Hermes...',
+    'runtime.downloading': 'Descargando runtime de Hermes...',
+    'runtime.downloadingPackage': 'Descargando {name}...',
+    'runtime.verifying': 'Verificando runtime de Hermes...',
+    'runtime.extracting': 'Extrayendo runtime de Hermes...',
+    'runtime.ready': 'Runtime de Hermes listo.',
+    'common.ok': 'Aceptar',
+  },
+  de: {
+    'tray.show': 'Hermes UI anzeigen',
+    'tray.hide': 'Hermes UI ausblenden',
+    'tray.checkForUpdates': 'Nach Updates suchen',
+    'tray.openAtLogin': 'Beim Anmelden offnen',
+    'tray.quit': 'Hermes UI beenden',
+    'update.upToDateTitle': 'Hermes UI',
+    'update.upToDateMessage': 'Hermes UI ist auf dem neuesten Stand.',
+    'update.checkingTitle': 'Hermes UI',
+    'update.checkingMessage': 'Suche nach Updates...',
+    'update.currentVersion': 'Aktuelle Version: {version}',
+    'update.availableTitle': 'Update verfugbar',
+    'update.availableMessage': 'Hermes UI {version} ist verfugbar.',
+    'update.downloading': 'Das Update wird im Hintergrund heruntergeladen.',
+    'update.readyTitle': 'Update bereit',
+    'update.readyMessage': 'Hermes UI {version} ist zur Installation bereit.',
+    'update.readyDetail': 'Jetzt neu starten, um das Update anzuwenden, oder es wird beim nachsten Beenden installiert.',
+    'update.restartNow': 'Jetzt neu starten',
+    'update.download': 'Herunterladen',
+    'update.later': 'Spater',
+    'update.failedTitle': 'Update-Prufung fehlgeschlagen',
+    'update.failedMessage': 'Updates fur Hermes UI konnten nicht gepruft werden.',
+    'update.noUpdateInfoMessage': 'Update-Informationen sind fur diese Plattform noch nicht verfugbar.',
+    'update.packagedOnlyMessage': 'Automatische Updates sind nur in der paketierten Desktop-App verfugbar.',
+    'desktop.startingLocalServices': 'Lokale Dienste werden gestartet...',
+    'desktop.selectRuntimeSource': 'Wahlen Sie eine Runtime-Downloadquelle aus, um lokale Dienste zu starten.',
+    'desktop.downloadFailed': 'Download fehlgeschlagen',
+    'desktop.downloadGithubTitle': 'Von GitHub herunterladen',
+    'desktop.downloadGithubDetail': 'Verwendet das Release-Asset direkt von GitHub.',
+    'desktop.failedPrepareRuntime': 'Hermes Runtime konnte nicht vorbereitet werden',
+    'desktop.failedStartServices': 'Lokale Dienste konnten nicht gestartet werden',
+    'desktop.shuttingDown': 'Lokale Dienste werden beendet...',
+    'runtime.checking': 'Hermes Runtime wird gepruft...',
+    'runtime.downloading': 'Hermes Runtime wird heruntergeladen...',
+    'runtime.downloadingPackage': '{name} wird heruntergeladen...',
+    'runtime.verifying': 'Hermes Runtime wird verifiziert...',
+    'runtime.extracting': 'Hermes Runtime wird entpackt...',
+    'runtime.ready': 'Hermes Runtime ist bereit.',
+    'common.ok': 'OK',
+  },
+  pt: {
+    'tray.show': 'Mostrar Hermes UI',
+    'tray.hide': 'Ocultar Hermes UI',
+    'tray.checkForUpdates': 'Verificar atualizacoes',
+    'tray.openAtLogin': 'Abrir ao iniciar sessao',
+    'tray.quit': 'Sair do Hermes UI',
+    'update.upToDateTitle': 'Hermes UI',
+    'update.upToDateMessage': 'Hermes UI esta atualizado.',
+    'update.checkingTitle': 'Hermes UI',
+    'update.checkingMessage': 'Verificando atualizacoes...',
+    'update.currentVersion': 'Versao atual: {version}',
+    'update.availableTitle': 'Atualizacao disponivel',
+    'update.availableMessage': 'Hermes UI {version} esta disponivel.',
+    'update.downloading': 'A atualizacao esta sendo baixada em segundo plano.',
+    'update.readyTitle': 'Atualizacao pronta',
+    'update.readyMessage': 'Hermes UI {version} esta pronto para instalar.',
+    'update.readyDetail': 'Reinicie agora para aplicar a atualizacao, ou ela sera instalada ao sair.',
+    'update.restartNow': 'Reiniciar agora',
+    'update.download': 'Baixar',
+    'update.later': 'Depois',
+    'update.failedTitle': 'Falha ao verificar atualizacoes',
+    'update.failedMessage': 'Nao foi possivel verificar atualizacoes do Hermes UI.',
+    'update.noUpdateInfoMessage': 'As informacoes de atualizacao ainda nao estao disponiveis para esta plataforma.',
+    'update.packagedOnlyMessage': 'Atualizacoes automaticas estao disponiveis apenas no app desktop empacotado.',
+    'desktop.startingLocalServices': 'Iniciando servicos locais...',
+    'desktop.selectRuntimeSource': 'Selecione uma fonte de download do runtime para iniciar os servicos locais.',
+    'desktop.downloadFailed': 'Falha no download',
+    'desktop.downloadGithubTitle': 'Baixar pelo GitHub',
+    'desktop.downloadGithubDetail': 'Usa diretamente o asset de release do GitHub.',
+    'desktop.failedPrepareRuntime': 'Falha ao preparar o runtime Hermes',
+    'desktop.failedStartServices': 'Falha ao iniciar os servicos locais',
+    'desktop.shuttingDown': 'Encerrando servicos locais...',
+    'runtime.checking': 'Verificando runtime Hermes...',
+    'runtime.downloading': 'Baixando runtime Hermes...',
+    'runtime.downloadingPackage': 'Baixando {name}...',
+    'runtime.verifying': 'Verificando runtime Hermes...',
+    'runtime.extracting': 'Extraindo runtime Hermes...',
+    'runtime.ready': 'Runtime Hermes pronto.',
+    'common.ok': 'OK',
+  },
+}
+
+function resolveLocale(): DesktopLocale {
+  const tag = app.getLocale()
+  const short = tag.slice(0, 2) as DesktopLocale
+  return supportedLocales.includes(short) ? short : 'en'
+}
+
+export function t(key: TranslationKey, params: Record<string, string> = {}): string {
+  const message = translations[resolveLocale()][key] || translations.en[key]
+  return Object.entries(params).reduce(
+    (value, [name, replacement]) => value.replaceAll(`{${name}}`, replacement),
+    message,
+  )
+}

@@ -1,0 +1,56 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+node_modules
+dist
+playwright-report
+test-results
+dist-ssr
+coverage
+__pycache__/
+*.py[cod]
+server/dist
+packages/server/dist
+*.local
+ROADMAP.md
+pnpm-lock.yaml
+pnpm-workspace.yaml
+# Server data
+packages/server/data/
+packages/server/node_modules/
+.hermes-ui/
+packages/desktop/dist/
+packages/desktop/release/
+packages/desktop/resources/
+packages/desktop/resources/python/
+packages/desktop/node_modules/
+packages/*/.pio/
+
+# Hermes config files (should be in user data directory, not project root)
+config.yaml
+.env
+hermes_data/
+hermes-dependencies.md
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.superpowers/
+# Client source map artifacts
+packages/client/src/**/*.js
+.hermes/
+BlackBox/
+
+# ESP32-C3 firmware build artifacts (build with `pio run` locally)
+packages/esp32-c3/release/

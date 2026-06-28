@@ -1,0 +1,312 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@source "../../index.html";
+@source "../**/*.{vue,js,ts,jsx,tsx}";
+
+@variant dark (&:where(.dark, .dark *));
+
+/* Inform the browser which color schemes are supported so native UI elements
+   (scrollbars, form controls, system backgrounds) match the active theme. */
+:root {
+  color-scheme: light;
+  /* Terminal — reference: white surface, rgb(0,187,0) prompt, dark text */
+  --terminal-tool-outer-bg: #ffffff;
+  --terminal-tool-viewport-bg: #ffffff;
+  --terminal-tool-border: #e5e7eb;
+  --terminal-tool-prompt: #00bb00;
+  --terminal-tool-text: #1a1a1a;
+  --terminal-tool-text-muted: #6b7280;
+}
+
+:root[data-theme='dark'],
+.dark {
+  color-scheme: dark;
+  /* Terminal dark: unified #1e1e1e surface, bright green prompt, light text */
+  --terminal-tool-outer-bg: #1e1e1e;
+  --terminal-tool-viewport-bg: #1e1e1e;
+  --terminal-tool-border: rgba(255, 255, 255, 0.08);
+  --terminal-tool-prompt: #00dd00;
+  --terminal-tool-text: #e5e5e5;
+  --terminal-tool-text-muted: #a1a1aa;
+}
+
+/* ── Terminal scrollbar: hair-thin 4px, hugs right edge, visible only on hover ── */
+
+/* xterm viewport — thin Firefox scrollbar, subtly visible */
+.terminal-tool-xterm-hover-scroll .xterm-viewport {
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
+}
+.terminal-tool-xterm-hover-scroll:hover .xterm-viewport {
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+.dark .terminal-tool-xterm-hover-scroll:hover .xterm-viewport,
+:root[data-theme='dark'] .terminal-tool-xterm-hover-scroll:hover .xterm-viewport {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* WebKit: 6px track with subtle thumb, more visible on hover */
+.terminal-tool-xterm-hover-scroll .xterm-viewport::-webkit-scrollbar {
+  width: 6px !important;
+  background: transparent !important;
+}
+.terminal-tool-xterm-hover-scroll .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent !important;
+  margin: 4px 0;
+}
+.terminal-tool-xterm-hover-scroll .xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+.terminal-tool-xterm-hover-scroll:hover .xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+.dark .terminal-tool-xterm-hover-scroll:hover .xterm-viewport::-webkit-scrollbar-thumb,
+:root[data-theme='dark'] .terminal-tool-xterm-hover-scroll:hover .xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Static shell output (Shiki HTML) — same thin hover scrollbar */
+.terminal-tool-shell-output-hover-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.terminal-tool-shell-output-hover-scroll:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+.dark .terminal-tool-shell-output-hover-scroll:hover,
+:root[data-theme='dark'] .terminal-tool-shell-output-hover-scroll:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+.terminal-tool-shell-output-hover-scroll::-webkit-scrollbar {
+  width: 4px !important;
+  background: transparent !important;
+}
+.terminal-tool-shell-output-hover-scroll::-webkit-scrollbar-track {
+  background: transparent !important;
+  margin: 4px 0;
+}
+.terminal-tool-shell-output-hover-scroll::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+.terminal-tool-shell-output-hover-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+.dark .terminal-tool-shell-output-hover-scroll:hover::-webkit-scrollbar-thumb,
+:root[data-theme='dark'] .terminal-tool-shell-output-hover-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* xterm canvas scrollbar (v5+) — HIDE completely.
+   We rely on the native .xterm-viewport scrollbar instead, which respects
+   ::-webkit-scrollbar CSS for thin, hover-only appearance. */
+.terminal-tool-xterm-hover-scroll .scrollbar.vertical,
+.terminal-tool-xterm-hover-scroll .xterm .scrollbar.vertical {
+  display: none !important;
+}
+
+#app {
+  display: contents;
+}
+
+body,html {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: var(--background-white-main);
+  color: var(--text-primary);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dark mode body — deeper base for seamless edge-to-edge feel */
+html[data-theme='dark'] body,
+.dark body {
+  background-color: var(--background-main);
+}
+
+h1,
+h2,
+h3,
+.display-text,
+.display-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* ===== MODERN SCROLLBAR ===== */
+.modern-scrollbar {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+.modern-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.modern-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+}
+
+.modern-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.12);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.modern-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.dark .modern-scrollbar,
+html[data-theme='dark'] .modern-scrollbar {
+  scrollbar-color: rgba(128, 128, 128, 0.45) transparent;
+}
+
+.dark .modern-scrollbar::-webkit-scrollbar-thumb,
+html[data-theme='dark'] .modern-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.35);
+}
+
+.dark .modern-scrollbar::-webkit-scrollbar-thumb:hover,
+html[data-theme='dark'] .modern-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(128, 128, 128, 0.55);
+}
+
+/* ===== SIDEBAR BRAND TOGGLE (text → icon on hover) ===== */
+.sidebar-brand-toggle .brand-icon {
+  display: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0;
+}
+.sidebar-brand-toggle:hover .brand-label {
+  display: none !important;
+}
+.sidebar-brand-toggle:hover .brand-icon {
+  display: block !important;
+}
+
+/* ===== MINIMAL SCROLLBAR (for sidebars) ===== */
+.minimal-scrollbar {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.minimal-scrollbar:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+.minimal-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.minimal-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.minimal-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+  transition: background-color 0.3s ease;
+}
+
+.minimal-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+.minimal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.dark .minimal-scrollbar:hover,
+html[data-theme='dark'] .minimal-scrollbar:hover {
+  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+}
+
+.dark .minimal-scrollbar:hover::-webkit-scrollbar-thumb,
+html[data-theme='dark'] .minimal-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.3);
+}
+
+.dark .minimal-scrollbar::-webkit-scrollbar-thumb:hover,
+html[data-theme='dark'] .minimal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(128, 128, 128, 0.45);
+}
+
+.clickable {
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.ltr\:border-l {
+  border-left-width: 1px;
+}
+
+/* ===== SHIKI SYNTAX HIGHLIGHTING ===== */
+/* Dark theme uses CSS variables from Shiki dual-theme output */
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: transparent !important;
+}
+
+/* Shiki code block styling */
+.shiki {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  overflow-x: auto;
+}
+
+.shiki code {
+  display: block;
+  font-family: 'SF Mono', Menlo, Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ===== ACCESSIBILITY: FORCED COLORS (Windows High Contrast / forced-colors mode) ===== */
+@media (forced-colors: active) {
+  /* Keyboard focus must remain visible in high-contrast mode */
+  :focus-visible {
+    outline: 3px solid ButtonText;
+    outline-offset: 2px;
+  }
+
+  /* Status indicators using background color alone lose meaning — preserve them */
+  .bg-green-500,
+  .bg-blue-500,
+  .bg-red-500 {
+    forced-color-adjust: none;
+  }
+}
+
+/* ===== ACCESSIBILITY: HIGH CONTRAST PREFERENCE ===== */
+@media (prefers-contrast: more) {
+  /* Strengthen borders and tertiary text for improved legibility */
+  :root {
+    --bolt-elements-borderColor: rgba(15, 23, 42, 0.3);
+    --bolt-elements-textTertiary: #5a5f68;
+  }
+
+  :root[data-theme='dark'],
+  .dark {
+    --bolt-elements-borderColor: rgba(200, 200, 200, 0.9);
+    --bolt-elements-textTertiary: #a8a8a8;
+  }
+}

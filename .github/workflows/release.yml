@@ -1,0 +1,53 @@
+name: Release
+
+# Single entry point for a full release. Push a version tag (e.g. v0.1.1) and
+# every channel fires in parallel off the same push event:
+#   - this workflow creates the GitHub Release (with generated notes)
+#   - npm-publish.yml      -> publishes @pythoughts/hermes-ui to npm
+#   - desktop-release.yml  -> builds installers for macOS/Windows/Linux
+#   - docker-publish.yml   -> builds + pushes the multi-arch Docker image
+#   - webui-release.yml    -> packages the Web UI runtime tarball
+#
+# Required repository secrets: NPM_TOKEN, DOCKERHUB_USERNAME, DOCKERHUB_TOKEN.
+# Optional (macOS signing/notarization): MAC_CSC_LINK, MAC_CSC_KEY_PASSWORD,
+# APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to create the release for (e.g. v0.1.1)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
+
+      - name: Create or update the GitHub Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          # The desktop flow promotes the release to "latest" once installers
+          # and update manifests are attached; keep it non-latest until then.
+          make_latest: false
