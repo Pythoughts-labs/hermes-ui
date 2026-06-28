@@ -206,12 +206,12 @@ async function resolveRuntimeDescriptor(): Promise<RuntimeDescriptor> {
       if (!manifest.asset?.name) {
         throw new Error(`runtime manifest is missing asset.name: ${candidate.url}`)
       }
-      if (!manifest.asset.url && !downloadSource) {
-        throw new Error(`runtime manifest is missing asset.url and no download source was selected: ${candidate.url}`)
+      if (!manifest.asset.url && !candidate.tag) {
+        throw new Error(`runtime manifest is missing asset.url and no release tag is available to construct one: ${candidate.url}`)
       }
       return {
         name: manifest.asset.name,
-        url: manifest.asset.url || runtimeAssetUrl(manifest.asset.name, candidate.tag, downloadSource!),
+        url: manifest.asset.url || runtimeAssetUrl(manifest.asset.name, candidate.tag),
         sha256: manifest.asset.sha256,
         hermesAgentVersion: manifest.hermesAgentVersion,
       }

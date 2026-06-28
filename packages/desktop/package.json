@@ -1,6 +1,6 @@
 {
   "name": "hermes-ui",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Hermes UI desktop distribution with bundled Python runtime and hermes-agent",
   "homepage": "https://github.com/Pythoughts-labs/hermes-ui",
   "author": {
